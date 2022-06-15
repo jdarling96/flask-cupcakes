@@ -1,3 +1,4 @@
+import json
 from unittest import TestCase
 
 from app import app
@@ -27,6 +28,15 @@ CUPCAKE_DATA_2 = {
     "rating": 10,
     "image": "http://test.com/cupcake2.jpg"
 }
+
+UPDATE_CUPCAKE_DATA = {
+    "flavor": "UpdateTestFlavor",
+    "size": "UpdateTestSize",
+    "rating": 6,
+    "image": "http://test.com/update.jpg"
+}
+
+
 
 
 class CupcakeViewsTestCase(TestCase):
@@ -107,3 +117,56 @@ class CupcakeViewsTestCase(TestCase):
             })
 
             self.assertEqual(Cupcake.query.count(), 2)
+
+
+    def test_update_cupcake(self):
+        with app.test_client() as client:
+            url = f'/api/cupcakes/{self.cupcake.id}'
+            resp = client.patch(url, json=UPDATE_CUPCAKE_DATA)
+
+            self.assertEqual(resp.status_code, 200)
+
+            data = resp.json
+
+            self.assertEqual(data, {
+                "cupcake": {
+                     "id": self.cupcake.id,
+                     "flavor": "UpdateTestFlavor",
+                     "size": "UpdateTestSize",
+                     "rating": 6,
+                     "image": "http://test.com/update.jpg"
+                }
+            })
+
+            self.assertEqual(Cupcake.query.count(), 1)
+
+    def test_update_cupcake_missing(self):
+        with app.test_client() as client:
+            url = f"/api/cupcakes/99999"
+            resp = client.patch(url, json=CUPCAKE_DATA_2)
+
+            self.assertEqual(resp.status_code, 404)        
+
+    def test_delete_cupcake(self): 
+         with app.test_client() as client:       
+              url = f'/api/cupcakes/{self.cupcake.id}'
+              resp = client.delete(url)
+              
+              self.assertEqual(resp.status_code, 200)
+
+              data = resp.json
+
+              self.assertEqual(data, {
+                "cupcake": {
+                    "deleted": self.cupcake.id
+                }
+            })
+
+              self.assertEqual(Cupcake.query.count(), 0)
+
+    def test_delete_cupcake_missing(self):
+        with app.test_client() as client:
+            url = f"/api/cupcakes/99999"
+            resp = client.delete(url)
+
+            self.assertEqual(resp.status_code, 404)          
